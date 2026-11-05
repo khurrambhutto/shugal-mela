@@ -37,7 +37,7 @@ def test_create_assigns_code_and_first_seat(store: SessionStore, rooms: RoomRegi
     assert ali.room_code == code
     [(recipient, snapshot)] = outcome.deliveries
     assert recipient == ali.session_id
-    assert snapshot["body"]["members"] == [{"session_id": ali.session_id, "nickname": "Ali"}]
+    assert snapshot["body"]["members"] == [{"session_id": ali.session_id, "nickname": "Ali", "away_ms": None}]
 
 
 def test_join_accepts_lowercase_code(store: SessionStore, rooms: RoomRegistry) -> None:
@@ -92,17 +92,39 @@ def test_room_limit(store: SessionStore, rooms: RoomRegistry) -> None:
     assert error_code(rooms.create, make(store), 2) == "SERVER_BUSY"
 
 
-def test_disconnect_removes_member_and_notifies_others(store: SessionStore, rooms: RoomRegistry) -> None:
+def test_disconnect_holds_seat_until_deadline(store: SessionStore, rooms: RoomRegistry) -> None:
+    now = [100.0]
+    store.clock = lambda: now[0]
     ali, sara = make(store), make(store, "Sara")
     code = rooms.create(ali, 2).fields["room_code"]
     rooms.join(sara, code)
 
-    deliveries = rooms.disconnect(sara)
-    assert sara.room_code is None
-    [(recipient, snapshot)] = deliveries
-    assert recipient == ali.session_id
+    [(recipient, snapshot)] = rooms.disconnect(sara)
+    assert recipient == ali.session_id  # Nothing is queued for the away member.
+    assert sara.room_code == code
     assert snapshot["body"]["revision"] == 3
+    assert [m["away_ms"] for m in snapshot["body"]["members"]] == [None, 60_000]
+
+    now[0] += 59.9
+    assert rooms.expire_away() == []
+    now[0] += 0.1
+    [(_, snapshot)] = rooms.expire_away()
+    assert sara.room_code is None
     assert [m["session_id"] for m in snapshot["body"]["members"]] == [ali.session_id]
+
+
+def test_reconnect_returns_member_to_seat(store: SessionStore, rooms: RoomRegistry) -> None:
+    ali, sara = make(store), make(store, "Sara")
+    code = rooms.create(ali, 2).fields["room_code"]
+    rooms.join(sara, code)
+    rooms.disconnect(sara)
+
+    deliveries = rooms.reconnect(sara)
+    assert sorted(r for r, _ in deliveries) == sorted([ali.session_id, sara.session_id])
+    assert all(m["away_ms"] is None for m in deliveries[0][1]["body"]["members"])
+    # Reconnecting while not away only refreshes this member.
+    assert [r for r, _ in rooms.reconnect(sara)] == [sara.session_id]
+    assert rooms.expire_away() == []
 
 
 def test_empty_room_is_deleted(store: SessionStore, rooms: RoomRegistry) -> None:

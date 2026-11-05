@@ -1,0 +1,1038 @@
+/* Shugal Mela: a night fair. The painted board is the one loud thing; everything else stays quiet. */
+
+:root {
+  color-scheme: dark;
+  --night: #1d1838;
+  --night-2: #28224b;
+  --night-3: #352d63;
+  --ivory: #f6ead2;
+  --muted: #b9b0d6;
+  --board: #fbf3e2;
+  --line: #3b2a1e;
+  --wood: #4a2414;
+  --marigold: #f19a1f;
+  --rose: #e8457c;
+  --red: #d7263d;
+  --green: #1e9b5c;
+  --yellow: #f7cd2c;
+  --blue: #2f6fd6;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --display: "Rozha One", "Times New Roman", serif;
+  --ui: "Baloo 2", system-ui, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--night);
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background:
+    radial-gradient(120% 70% at 50% -10%, #3a2f74 0%, transparent 60%),
+    var(--night);
+  color: var(--ivory);
+  font: 400 1rem/1.45 var(--ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 16px 40px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h2 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+:focus-visible {
+  outline: 3px solid var(--marigold);
+  outline-offset: 2px;
+}
+
+/* Masthead with a string of fair lights */
+
+.masthead {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 34px 0 18px;
+}
+
+.masthead::before {
+  content: "";
+  position: absolute;
+  inset: 8px 0 auto;
+  height: 12px;
+  background:
+    radial-gradient(circle, var(--marigold) 0 3px, transparent 4px) 0 0 / 56px 12px,
+    radial-gradient(circle, var(--rose) 0 3px, transparent 4px) 14px 0 / 56px 12px,
+    radial-gradient(circle, #6fd3c1 0 3px, transparent 4px) 28px 0 / 56px 12px,
+    radial-gradient(circle, var(--ivory) 0 3px, transparent 4px) 42px 0 / 56px 12px;
+  opacity: 0.85;
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+.wordmark {
+  font: 400 clamp(2.6rem, 7vw, 4.4rem) / 0.95 var(--display);
+  letter-spacing: 0.01em;
+  color: var(--ivory);
+  text-shadow: 0 2px 0 #00000055;
+}
+
+body[data-screen="room"] .wordmark {
+  font-size: 1.9rem;
+}
+
+.conn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.92rem;
+}
+
+.status::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--dot, #8a84a8);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--dot, #8a84a8) 25%, transparent);
+}
+
+.status[data-state="connected"] {
+  --dot: #4fd18b;
+}
+.status[data-state="connecting"] {
+  --dot: var(--marigold);
+}
+.status[data-state="offline"] {
+  --dot: var(--red);
+}
+
+.notice {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--red) 22%, var(--night-2));
+  border: 1px solid color-mix(in srgb, var(--red) 55%, transparent);
+}
+
+/* Buttons and fields */
+
+.btn {
+  font: 600 1rem/1 var(--ui);
+  padding: 0.78rem 1.15rem 0.68rem;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    transform 140ms var(--ease-out),
+    background-color 160ms ease,
+    opacity 160ms ease;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-marigold {
+  background: var(--marigold);
+  color: #2a1606;
+}
+
+.btn-light {
+  background: var(--night-3);
+  color: var(--ivory);
+  border-color: #ffffff1f;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+  padding-inline: 0.7rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-marigold:hover:not(:disabled) {
+    background: #f6ab3d;
+  }
+  .btn-light:hover:not(:disabled) {
+    background: #403776;
+  }
+  .btn-ghost:hover:not(:disabled) {
+    color: var(--ivory);
+  }
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+input {
+  font: 500 1.05rem/1.2 var(--ui);
+  color: var(--ivory);
+  background: var(--night);
+  border: 1px solid #ffffff26;
+  border-radius: 12px;
+  padding: 0.7rem 0.85rem 0.6rem;
+  min-width: 0;
+}
+
+input::placeholder {
+  color: #8a84a8;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+
+/* Front screens */
+
+.welcome,
+.lobby {
+  max-width: 460px;
+  display: grid;
+  gap: 18px;
+  padding-top: 18px;
+}
+
+.lede {
+  font-size: 1.25rem;
+  color: var(--muted);
+  max-width: 30ch;
+}
+
+.welcome .btn {
+  justify-self: start;
+}
+
+.lobby h2 {
+  font: 400 1.6rem/1.1 var(--display);
+  color: var(--ivory);
+}
+
+.or {
+  color: var(--muted);
+}
+
+.join {
+  display: flex;
+  gap: 10px;
+  align-items: end;
+}
+
+.code-input {
+  width: 8.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+/* Room */
+
+.room-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  margin-bottom: 18px;
+}
+
+.room-id {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.room-id .label {
+  color: var(--muted);
+}
+
+.room-code {
+  font: 400 1.7rem/1 var(--display);
+  letter-spacing: 0.12em;
+}
+
+.seats {
+  color: var(--muted);
+  margin-right: auto;
+}
+
+.table {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+  gap: 28px;
+  align-items: start;
+}
+
+.side {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.panel {
+  background: var(--night-2);
+  border: 1px solid #ffffff12;
+  border-radius: 18px;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+}
+
+@media (max-width: 880px) {
+  .table {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .messages {
+    height: 150px;
+  }
+  .masthead {
+    padding-top: 30px;
+  }
+}
+
+/* The board */
+
+.board-wrap {
+  grid-area: board;
+  position: relative;
+  width: min(100%, calc(100dvh - 280px));
+  min-width: min(100%, 320px);
+  margin-inline: auto;
+}
+
+.board-frame {
+  /* A truck-art flower chain, painted around the board. */
+  padding: clamp(10px, 2.6vmin, 22px);
+  border-radius: 20px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Crect width='30' height='30' fill='%237a1f2b'/%3E%3Cg transform='translate(15 15)'%3E%3Cellipse rx='3.3' ry='7' fill='%23f19a1f'/%3E%3Cellipse rx='7' ry='3.3' fill='%23f19a1f'/%3E%3Ccircle r='3.4' fill='%23e8457c'/%3E%3Ccircle r='1.4' fill='%23f6ead2'/%3E%3C/g%3E%3Cg fill='%2331b38a'%3E%3Ccircle r='2.6'/%3E%3Ccircle cx='30' r='2.6'/%3E%3Ccircle cy='30' r='2.6'/%3E%3Ccircle cx='30' cy='30' r='2.6'/%3E%3C/g%3E%3C/svg%3E")
+    0 0 / 30px 30px,
+    #7a1f2b;
+  box-shadow:
+    inset 0 0 0 2px #f19a1f66,
+    0 2px 0 #00000040,
+    0 40px 70px -30px #000000b0;
+}
+
+.board-stage {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 3px var(--ivory),
+    0 0 0 6px var(--wood);
+  container-type: inline-size;
+}
+
+/* A soft lacquer sheen over the painted board, beneath the tokens. */
+.board-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(90% 70% at 30% 20%, #ffffff30, transparent 60%),
+    radial-gradient(130% 130% at 50% 50%, transparent 60%, #3b2a1e2e);
+}
+
+.board-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.sq-base,
+.yard-court {
+  fill: var(--board);
+}
+
+.sq {
+  fill: var(--board);
+  stroke: var(--line);
+  stroke-width: 0.045;
+}
+
+.fill-red {
+  fill: var(--red);
+}
+.fill-green {
+  fill: var(--green);
+}
+.fill-yellow {
+  fill: var(--yellow);
+}
+.fill-blue {
+  fill: var(--blue);
+}
+
+.yard-court {
+  stroke: var(--line);
+  stroke-width: 0.05;
+}
+
+.yard-well {
+  stroke: var(--line);
+  stroke-width: 0.04;
+  fill-opacity: 0.22;
+}
+.well-red {
+  fill: var(--red);
+}
+.well-green {
+  fill: var(--green);
+}
+.well-yellow {
+  fill: #c99a00;
+}
+.well-blue {
+  fill: var(--blue);
+}
+
+.glyph-star {
+  fill: var(--line);
+  opacity: 0.55;
+}
+
+.glyph-start {
+  fill: var(--board);
+  opacity: 0.9;
+}
+
+.centre-tri,
+.centre-edge {
+  stroke: var(--line);
+  stroke-width: 0.045;
+}
+
+.centre-edge {
+  fill: none;
+}
+
+/* The yard of the player whose turn it is breathes gently. */
+.board-stage[data-turn="red"] .yard-red .yard-court,
+.board-stage[data-turn="green"] .yard-green .yard-court,
+.board-stage[data-turn="yellow"] .yard-yellow .yard-court,
+.board-stage[data-turn="blue"] .yard-blue .yard-court {
+  stroke: var(--ivory);
+  stroke-width: 0.16;
+  animation: breathe 1.6s ease-in-out infinite alternate;
+}
+
+@keyframes breathe {
+  from {
+    stroke-opacity: 1;
+  }
+  to {
+    stroke-opacity: 0.35;
+  }
+}
+
+/* Tokens: glossy domes, positioned in cell units by transform. */
+
+.token {
+  --tone: var(--red);
+  --deep: #8e1222;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: calc(100% / 15);
+  height: calc(100% / 15);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: default;
+  transform-origin: 50% 50%;
+  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.token-green {
+  --tone: var(--green);
+  --deep: #0b5a33;
+}
+.token-yellow {
+  --tone: var(--yellow);
+  --deep: #a37a00;
+}
+.token-blue {
+  --tone: var(--blue);
+  --deep: #163e86;
+}
+
+.token::before {
+  /* Shadow cast on the board. */
+  content: "";
+  position: absolute;
+  left: 18%;
+  right: 12%;
+  bottom: 6%;
+  height: 28%;
+  border-radius: 50%;
+  background: #1a0e0666;
+  filter: blur(1.5px);
+}
+
+.token::after {
+  content: "";
+  position: absolute;
+  inset: 12% 14% 18% 14%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 28%, #ffffffd9 0 9%, transparent 26%),
+    radial-gradient(circle at 50% 50%, transparent 0 34%, #00000026 35% 40%, transparent 41%),
+    radial-gradient(circle at 40% 35%, color-mix(in srgb, var(--tone) 70%, #fff) 0%, var(--tone) 45%, var(--deep) 100%);
+  box-shadow:
+    0 0 0 1.5px var(--deep),
+    inset 0 -2px 2px #00000040;
+  transition: transform 140ms var(--ease-out);
+}
+
+.token.is-idle {
+  opacity: 0.5;
+  filter: saturate(0.6);
+}
+
+.token.is-hopping {
+  z-index: 4;
+}
+
+.token.is-movable {
+  z-index: 3;
+  cursor: pointer;
+}
+
+.token.is-movable::after {
+  box-shadow:
+    0 0 0 1.5px var(--deep),
+    0 0 0 4px #fff,
+    0 0 0 6px var(--tone),
+    0 0 22px 9px color-mix(in srgb, var(--tone) 70%, #fff);
+  animation: beckon 900ms ease-in-out infinite alternate;
+}
+
+/* Tokens that cannot move this turn step back so the choices stand out. */
+.board-stage:has(.token.is-movable) .token:not(.is-movable):not(.is-hopping) {
+  filter: saturate(0.55) brightness(0.92);
+}
+
+.token.is-movable:active::after {
+  transform: scale(0.92);
+}
+
+@keyframes beckon {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-9%);
+  }
+}
+
+/* The result banner and confetti */
+
+.banner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 6;
+  min-width: min(78%, 320px);
+  translate: -50% -50%;
+  padding: 18px 22px;
+  border-radius: 16px;
+  background: var(--ivory);
+  color: var(--line);
+  text-align: center;
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--banner, var(--marigold)) 90%, transparent),
+    0 24px 50px -16px #000000a0;
+  opacity: 1;
+  scale: 1;
+  transition:
+    opacity 260ms var(--ease-out),
+    scale 260ms var(--ease-out);
+}
+
+@starting-style {
+  .banner {
+    opacity: 0;
+    scale: 0.94;
+  }
+}
+
+.banner[data-colour="red"] {
+  --banner: var(--red);
+}
+.banner[data-colour="green"] {
+  --banner: var(--green);
+}
+.banner[data-colour="yellow"] {
+  --banner: var(--yellow);
+}
+.banner[data-colour="blue"] {
+  --banner: var(--blue);
+}
+
+.banner-title {
+  font: 400 2rem/1.1 var(--display);
+}
+
+.confetti {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.confetti span {
+  position: absolute;
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--marigold);
+}
+
+.confetti span[data-colour="red"] {
+  background: var(--red);
+}
+.confetti span[data-colour="green"] {
+  background: var(--green);
+}
+.confetti span[data-colour="yellow"] {
+  background: var(--yellow);
+}
+.confetti span[data-colour="blue"] {
+  background: var(--blue);
+}
+.confetti span[data-colour="ivory"] {
+  background: var(--ivory);
+}
+
+/* The dice */
+
+.die {
+  --size: 64px;
+  flex: none;
+  width: var(--size);
+  height: var(--size);
+  perspective: 420px;
+}
+
+.die-cube {
+  /* Turned faces project past the die's box; only the box itself takes clicks. */
+  pointer-events: none;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+}
+
+.die-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  padding: 16%;
+  border-radius: 16%;
+  background: radial-gradient(circle at 30% 25%, #ffffff, var(--ivory) 70%);
+  box-shadow:
+    inset 0 0 0 1px #00000018,
+    inset 0 -4px 6px #3b2a1e22;
+  backface-visibility: hidden;
+}
+
+.die-front {
+  transform: translateZ(calc(var(--size) / 2));
+}
+.die-back {
+  transform: rotateY(180deg) translateZ(calc(var(--size) / 2));
+}
+.die-right {
+  transform: rotateY(90deg) translateZ(calc(var(--size) / 2));
+}
+.die-left {
+  transform: rotateY(-90deg) translateZ(calc(var(--size) / 2));
+}
+.die-top {
+  transform: rotateX(90deg) translateZ(calc(var(--size) / 2));
+}
+.die-bottom {
+  transform: rotateX(-90deg) translateZ(calc(var(--size) / 2));
+}
+
+.pip {
+  place-self: center;
+  width: 72%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--pip, var(--line));
+  box-shadow: inset 0 1px 1px #00000055;
+}
+
+.die[data-colour="red"] {
+  --pip: var(--red);
+}
+.die[data-colour="green"] {
+  --pip: var(--green);
+}
+.die[data-colour="yellow"] {
+  --pip: #c48d00;
+}
+.die[data-colour="blue"] {
+  --pip: var(--blue);
+}
+
+
+.hint {
+  color: var(--muted);
+}
+
+/* The table: a seat at each corner of the board */
+
+.stage {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-areas:
+    "red green"
+    "board board"
+    "blue yellow"
+    "lobby lobby";
+  gap: 10px 12px;
+  min-width: 0;
+}
+
+.seat {
+  --seat: #6a6390;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 8px 12px;
+  border-radius: 16px;
+  background: var(--night-2);
+  border: 1px solid #ffffff12;
+  opacity: 0.42;
+  filter: saturate(0.35);
+  transition:
+    opacity 260ms var(--ease-out),
+    filter 260ms var(--ease-out),
+    box-shadow 260ms var(--ease-out),
+    background-color 260ms var(--ease-out);
+}
+
+.seat[data-colour="red"] {
+  --seat: var(--red);
+  grid-area: red;
+}
+.seat[data-colour="green"] {
+  --seat: var(--green);
+  grid-area: green;
+  flex-direction: row-reverse;
+  text-align: right;
+}
+.seat[data-colour="yellow"] {
+  --seat: var(--yellow);
+  grid-area: yellow;
+  flex-direction: row-reverse;
+  text-align: right;
+}
+.seat[data-colour="blue"] {
+  --seat: var(--blue);
+  grid-area: blue;
+}
+
+.seat.is-lit,
+.seat.is-rolling {
+  opacity: 1;
+  filter: none;
+}
+
+.seat.is-turn {
+  background: color-mix(in srgb, var(--seat) 22%, var(--night-2));
+  box-shadow:
+    0 0 0 2px var(--seat),
+    0 0 32px -6px var(--seat);
+}
+
+.seat.is-away {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--marigold) 60%, transparent);
+}
+
+.seat.is-away .seat-note {
+  color: var(--marigold);
+}
+
+.room[data-offline="true"] .stage {
+  opacity: 0.7;
+  transition: opacity 200ms var(--ease-out);
+}
+
+.seat.is-empty {
+  background: transparent;
+  border: 1px dashed #ffffff30;
+}
+
+.seat .die {
+  --size: 46px;
+}
+
+.seat.can-roll .die {
+  cursor: pointer;
+  animation: nudge 1.6s var(--ease-in-out) infinite;
+}
+
+@keyframes nudge {
+  0%,
+  70%,
+  100% {
+    transform: none;
+  }
+  80% {
+    transform: rotate(-8deg) scale(1.06);
+  }
+  90% {
+    transform: rotate(6deg) scale(1.06);
+  }
+}
+
+.seat-info {
+  flex: 1;
+  display: grid;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.member-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seat .tag {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.seat .tag:empty,
+.seat-note:empty {
+  display: none;
+}
+
+.seat-note {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ivory);
+}
+
+.seat-note.is-flash {
+  color: var(--marigold);
+}
+
+.seat-actions:empty {
+  display: none;
+}
+
+.btn-roll {
+  background: var(--marigold);
+  color: #2a1606;
+  box-shadow: 0 4px 0 #00000055;
+}
+.btn-roll[data-colour="red"] {
+  background: var(--red);
+  color: var(--ivory);
+}
+.btn-roll[data-colour="green"] {
+  background: var(--green);
+  color: var(--ivory);
+}
+.btn-roll[data-colour="yellow"] {
+  background: var(--yellow);
+  color: #2a1606;
+}
+.btn-roll[data-colour="blue"] {
+  background: var(--blue);
+  color: var(--ivory);
+}
+
+.seat .btn-roll {
+  padding: 0.6rem 1.1rem 0.5rem;
+  font-size: 1rem;
+}
+
+.table-lobby {
+  grid-area: lobby;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: var(--night-2);
+  border: 1px solid #ffffff12;
+}
+
+/* Narrow seats have no room for a name and a button, so your Roll button takes the seat on your turn. */
+@media (max-width: 1099px) {
+  .seat.can-roll .seat-info {
+    display: none;
+  }
+  .seat.can-roll .seat-actions {
+    flex: 1;
+  }
+  .seat.can-roll .btn-roll {
+    width: 100%;
+  }
+}
+
+/* Wide screens: seats sit beside the board's corners, so the board keeps its height. */
+@media (min-width: 1100px) {
+  .stage {
+    grid-template-columns: 128px minmax(0, 1fr) 128px;
+    grid-template-rows: 1fr 1fr auto;
+    grid-template-areas:
+      "red board green"
+      "blue board yellow"
+      "lobby lobby lobby";
+    gap: 14px 18px;
+  }
+  .board-wrap {
+    width: min(100%, calc(100dvh - 150px));
+  }
+  .seat,
+  .seat[data-colour="green"],
+  .seat[data-colour="yellow"] {
+    flex-direction: column;
+    text-align: center;
+    padding: 14px 10px;
+  }
+  .seat[data-colour="red"],
+  .seat[data-colour="green"] {
+    align-self: start;
+  }
+  .seat[data-colour="blue"],
+  .seat[data-colour="yellow"] {
+    align-self: end;
+  }
+  .seat-info {
+    width: 100%;
+  }
+  .seat .die {
+    --size: 60px;
+  }
+  .messages {
+    height: max(220px, calc(100dvh - 330px));
+  }
+}
+
+/* Chat */
+
+.messages {
+  list-style: none;
+  margin: 0;
+  padding: 4px 2px;
+  height: 200px;
+  overflow-y: auto;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+}
+
+.messages li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.messages .sender {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.messages .mine .sender {
+  color: var(--marigold);
+}
+
+.messages time {
+  color: #8a84a8;
+  font-size: 0.85em;
+}
+
+.composer {
+  display: flex;
+  gap: 8px;
+}
+
+.composer input {
+  flex: 1;
+}
+
+/* Reduced motion: keep state changes legible, drop movement. */
+@media (prefers-reduced-motion: reduce) {
+  .seat.can-roll .die {
+    animation: none;
+  }
+  .token.is-movable::after,
+  .board-stage[data-turn] .yard-court {
+    animation: none;
+  }
+  .btn:active:not(:disabled) {
+    transform: none;
+  }
+  .banner {
+    transition: opacity 200ms ease;
+    scale: 1;
+  }
+}

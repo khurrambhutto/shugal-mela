@@ -14,13 +14,17 @@ import {
   type AppState,
 } from "../src/state";
 
-const me = { session_id: "session-a", nickname: "Ali" };
+const me = { session_id: "session-a", nickname: "Ali", away_ms: null };
+const ready = (room_code: string | null = null) => ({ session_id: me.session_id, nickname: me.nickname, room_code });
 
 function snapshot(code: string, revision: number, texts: string[] = []): RoomSnapshot {
   return {
     code,
     capacity: 2,
     revision,
+    host: me.session_id,
+    ready: [],
+    match: null,
     members: [me],
     messages: texts.map((text, i) => ({
       message_id: `m${i}`,
@@ -39,7 +43,7 @@ const ok = (room_code: string | null, revision: number | null): ResultBody => ({
   revision,
 });
 
-const connected: AppState = sessionReady(initialState, me);
+const connected: AppState = sessionReady(initialState, ready());
 
 function inRoom(code = "ABCD23", revision = 2): AppState {
   return applySnapshot(beginRoomCommand(connected, { kind: "join", code }), snapshot(code, revision));
@@ -139,9 +143,31 @@ describe("offline behavior", () => {
     expect(applySnapshot(offline, snapshot("ABCD23", 10)).room?.revision).toBe(2);
   });
 
-  it("starts outside any room after reconnecting", () => {
-    const back = sessionReady(connectionLost(inRoom(), "x"), me);
+  it("keeps the room on screen while reconnecting", () => {
+    const retrying = connectionLost(inRoom(), "Reconnecting…", true);
+    expect(retrying.status).toBe("reconnecting");
+    expect(retrying.room?.code).toBe("ABCD23");
+    expect(canSubmit(retrying)).toBe(false);
+  });
+
+  it("keeps the seat when the server still holds it", () => {
+    const back = sessionReady(connectionLost(inRoom(), "x", true), ready("ABCD23"));
+    expect(back.room?.code).toBe("ABCD23");
+    expect(back.notice).toBeNull();
+    expect(applySnapshot(back, snapshot("ABCD23", 3)).room?.revision).toBe(3);
+  });
+
+  it("returns to the room the server names after a refresh", () => {
+    const back = sessionReady(initialState, ready("ABCD23"));
     expect(back.room).toBeNull();
+    expect(applySnapshot(back, snapshot("ABCD23", 7)).room?.code).toBe("ABCD23");
+    expect(applySnapshot(back, snapshot("OTHER2", 7)).room).toBeNull();
+  });
+
+  it("explains a released seat", () => {
+    const back = sessionReady(connectionLost(inRoom(), "x", true), ready());
+    expect(back.room).toBeNull();
+    expect(back.notice).toContain("seat was released");
     expect(canSubmit(back)).toBe(true);
   });
 });

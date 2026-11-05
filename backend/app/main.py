@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import logging
+import random
 from collections.abc import AsyncIterator
 
 from fastapi import FastAPI, Request, Response, WebSocket, status
@@ -10,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 
 from app.config import Settings, load_settings
 from app.connections import ConnectionRegistry
+from app.match import secure_die
 from app.protocol import PROTOCOL_VERSION
 from app.rooms import RoomRegistry
 from app.sessions import (
@@ -25,6 +27,7 @@ logger = logging.getLogger("shugal")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 
 EXPIRY_SWEEP_INTERVAL_S = 60
+AWAY_SWEEP_INTERVAL_S = 1
 
 
 class SessionRequest(BaseModel):
@@ -45,7 +48,12 @@ def _error(status_code: int, code: str, message: str) -> JSONResponse:
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or load_settings()
     sessions = SessionStore(settings.limits)
-    rooms = RoomRegistry(sessions, settings.limits)
+    dice = secure_die
+    if settings.dice_seed is not None:
+        logger.warning("dice are seeded for testing; never use DICE_SEED for real games")
+        seeded = random.Random(settings.dice_seed)
+        dice = lambda: seeded.randint(1, 6)  # noqa: E731
+    rooms = RoomRegistry(sessions, settings.limits, dice)
     conns = ConnectionRegistry()
     processor = CommandProcessor(settings, sessions, rooms, conns)
 
@@ -57,9 +65,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 if expired := sessions.expire_idle():
                     logger.info("expired idle sessions count=%d", expired)
 
-        task = asyncio.create_task(sweep())
+        async def release_seats() -> None:
+            while True:
+                await asyncio.sleep(AWAY_SWEEP_INTERVAL_S)
+                processor.expire_away()
+
+        tasks = [asyncio.create_task(sweep()), asyncio.create_task(release_seats())]
         yield
-        task.cancel()
+        for task in tasks:
+            task.cancel()
 
     app = FastAPI(
         title="Shugal Mela", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan

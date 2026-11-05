@@ -81,11 +81,11 @@ class ConnectionRegistry:
     def __len__(self) -> int:
         return len(self._by_session)
 
-    def register(self, conn: Connection) -> bool:
-        if conn.session_id in self._by_session:
-            return False
+    def register(self, conn: Connection) -> Connection | None:
+        """Make conn the session's connection. Returns the older connection it replaced."""
+        previous = self._by_session.get(conn.session_id)
         self._by_session[conn.session_id] = conn
-        return True
+        return previous
 
     def unregister(self, conn: Connection) -> None:
         # Only remove this exact connection, never a replacement for the same session.

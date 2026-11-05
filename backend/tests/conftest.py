@@ -53,6 +53,7 @@ class Player:
         self.session_id = session_id
         self.credential = credential
         self.inbox: list[dict[str, Any]] = []
+        self.room_code: str | None = None
 
     def send(self, type_: str, body: dict[str, Any], command_id: str | None = None, **extra: Any) -> str:
         command_id = command_id or str(uuid.uuid4())
@@ -100,6 +101,17 @@ def player(client: TestClient, nickname: str = "Ali") -> Iterator[Player]:
         ready = ws.receive_json()
         assert ready["type"] == "session.ready"
         yield Player(ws, ready["body"]["session_id"], credential)
+
+
+@contextmanager
+def reconnect(client: TestClient, p: Player) -> Iterator[Player]:
+    """Open a new connection for an existing player's session."""
+    with client.websocket_connect("/ws", headers=ws_headers(p.credential)) as ws:
+        ready = ws.receive_json()
+        assert ready["type"] == "session.ready"
+        again = Player(ws, ready["body"]["session_id"], p.credential)
+        again.room_code = ready["body"]["room_code"]
+        yield again
 
 
 def create_room(p: Player, capacity: int = 2) -> str:

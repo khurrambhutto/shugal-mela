@@ -44,16 +44,6 @@ def test_rejects_untrusted_origin(client: TestClient, origin: str) -> None:
             pass
 
 
-def test_rejects_competing_connection(client: TestClient) -> None:
-    with player(client) as p:
-        with client.websocket_connect("/ws", headers=ws_headers(p.credential)) as second:
-            with pytest.raises(WebSocketDisconnect) as exc:
-                second.receive_json()
-        assert exc.value.code == 4409
-        # The original connection keeps working.
-        assert p.call("room.leave", {})["ok"]
-
-
 def test_session_can_reconnect_after_close(client: TestClient) -> None:
     credential = new_session(client)
     for _ in range(2):
@@ -155,25 +145,6 @@ def test_simultaneous_final_seat(client: TestClient) -> None:
         assert sorted(r["ok"] for r in results) == [False, True]
         assert [r["error"]["code"] for r in results if not r["ok"]] == ["ROOM_FULL"]
         assert len(ali.snapshot()["members"]) == 2
-
-
-def test_disconnect_releases_seat(client: TestClient) -> None:
-    with player(client, "Ali") as ali:
-        code = create_room(ali, 2)
-        with player(client, "Sara") as sara:
-            assert sara.call("room.join", {"code": code})["ok"]
-            assert len(ali.snapshot()["members"]) == 2
-        snapshot = ali.snapshot()
-        assert [m["nickname"] for m in snapshot["members"]] == ["Ali"]
-
-        with player(client, "Omar") as omar:
-            assert omar.call("room.join", {"code": code})["ok"]
-
-
-def test_room_deleted_when_last_member_disconnects(client: TestClient, app) -> None:
-    with player(client) as ali:
-        code = create_room(ali)
-    assert app.state.rooms.get(code) is None
 
 
 def test_duplicate_command_returns_original_result(client: TestClient) -> None:

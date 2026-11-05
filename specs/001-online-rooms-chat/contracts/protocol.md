@@ -54,6 +54,9 @@ Show a message that another tab is connected. Distinct test players need separat
 Use server WebSocket ping and timeout settings to detect dead connections.
 Detected disconnect releases membership in this feature.
 
+> Superseded by [feature 004](../../004-reconnect/contracts/protocol.md): the newest connection
+> takes over and the older one closes with `4000`, and a disconnect holds the seat for 60 seconds.
+
 ## Commands
 
 Every client command has this envelope:

@@ -4,41 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Shugal Mela</title>
-    <style>
-      :root {
-        color-scheme: light dark;
-        font-family: system-ui, sans-serif;
-        --border: color-mix(in srgb, currentColor 20%, transparent);
-        --accent: #2b6cb0;
-      }
-      body { margin: 0 auto; max-width: 42rem; padding: 1.5rem 1rem; }
-      h1 { margin: 0 0 1rem; }
-      [hidden] { display: none !important; }
-      button, input { font: inherit; padding: 0.45rem 0.7rem; border-radius: 0.4rem; border: 1px solid var(--border); }
-      button { cursor: pointer; background: var(--accent); color: white; border-color: transparent; }
-      button:disabled { opacity: 0.5; cursor: not-allowed; }
-      .card { border: 1px solid var(--border); border-radius: 0.6rem; padding: 1rem; margin: 1rem 0; display: grid; gap: 0.75rem; }
-      .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
-      .spread { justify-content: space-between; }
-      .status { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0.8rem; border-radius: 999px; border: 1px solid var(--border); margin: 0; }
-      .status::before { content: ""; width: 0.6rem; height: 0.6rem; border-radius: 50%; background: var(--dot, gray); }
-      .status[data-state="connected"] { --dot: #1a9850; }
-      .status[data-state="connecting"] { --dot: #e0a800; }
-      .status[data-state="offline"] { --dot: #d73027; }
-      .notice { padding: 0.6rem 0.8rem; border-radius: 0.4rem; background: color-mix(in srgb, #d73027 15%, transparent); }
-      .room-code { font-family: ui-monospace, monospace; font-size: 1.3rem; letter-spacing: 0.15em; }
-      .code-input { text-transform: uppercase; font-family: ui-monospace, monospace; width: 7rem; }
-      .members { margin: 0; padding-left: 1.2rem; }
-      .messages { list-style: none; margin: 0; padding: 0.5rem; height: 18rem; overflow-y: auto; border: 1px solid var(--border); border-radius: 0.4rem; display: grid; align-content: start; gap: 0.35rem; }
-      .messages li { display: grid; grid-template-columns: auto 1fr auto; gap: 0.5rem; overflow-wrap: anywhere; white-space: pre-wrap; }
-      .messages .sender { font-weight: 600; }
-      .messages .mine .sender { color: var(--accent); }
-      .messages time { opacity: 0.6; font-size: 0.85em; }
-      .composer input { flex: 1; min-width: 0; }
-    </style>
+    <meta name="theme-color" content="#1d1838" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700&family=Rozha+One&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
-    <h1>Shugal Mela</h1>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

@@ -74,8 +74,9 @@ After a restart:
 - Cookies belong to the old address, so everyone enters a nickname again.
 - Rooms and chat are gone. They live in memory until phase 7 adds SQLite.
 
-If only the tunnel drops, browsers show **Offline** and offer **Reconnect**. Their seats are
-released on disconnect in this feature, so players reconnect and rejoin the room by code.
+If only the tunnel or a player's Wi-Fi drops, browsers show **Reconnecting…** and retry on their own.
+The server holds each seat for 60 seconds and pauses a match until everyone is back. Refreshing the
+page also returns to the same seat. After 60 seconds the seat is released and a match ends.
 
 ## Limits and failure modes
 

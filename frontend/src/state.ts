@@ -1,8 +1,9 @@
 // Client state transitions. Pure functions so they can be tested without a browser.
 
-import type { CommandError, ResultBody, RoomSnapshot, SessionInfo } from "./protocol";
+import type { CommandError, ResultBody, RoomSnapshot, SessionInfo, SessionReady } from "./protocol";
 
-export type ConnectionStatus = "idle" | "connecting" | "connected" | "offline";
+// "reconnecting" keeps the room on screen while the client retries on its own.
+export type ConnectionStatus = "idle" | "connecting" | "connected" | "reconnecting" | "offline";
 
 // A create or join that has been sent but whose room is not yet established.
 export type PendingRoom = { kind: "create" } | { kind: "join"; code: string } | null;
@@ -31,18 +32,30 @@ export function canSubmit(state: AppState): boolean {
 }
 
 export function connecting(state: AppState): AppState {
+  if (state.status === "reconnecting") return state;
   return { ...state, status: "connecting", notice: null };
 }
 
-export function sessionReady(state: AppState, session: SessionInfo): AppState {
-  // A new connection starts outside any room: the server released the old seat.
-  return { ...state, status: "connected", session, room: null, pendingRoom: null };
+export function sessionReady(state: AppState, ready: SessionReady): AppState {
+  const session: SessionInfo = { session_id: ready.session_id, nickname: ready.nickname };
+  const base = { ...state, status: "connected" as const, session, notice: null };
+  // The server still holds our seat: keep the room until its fresh snapshot arrives.
+  if (ready.room_code !== null && ready.room_code === state.room?.code) return { ...base, pendingRoom: null };
+  // After a refresh: accept the snapshot of the room the server says we are in.
+  if (ready.room_code !== null) return { ...base, room: null, pendingRoom: { kind: "join", code: ready.room_code } };
+  const released = state.room !== null || state.lastRoomCode !== null;
+  return {
+    ...base,
+    room: null,
+    pendingRoom: null,
+    notice: released ? "You were away too long, so your seat was released." : null,
+  };
 }
 
-export function connectionLost(state: AppState, notice: string): AppState {
+export function connectionLost(state: AppState, notice: string, retrying = false): AppState {
   return {
     ...state,
-    status: "offline",
+    status: retrying ? "reconnecting" : "offline",
     pendingRoom: null,
     lastRoomCode: state.room?.code ?? state.lastRoomCode,
     notice,
@@ -110,6 +123,18 @@ export function describeError(error: CommandError): string {
     }
     case "SERVER_BUSY":
       return "The server is at capacity. Try again later.";
+    case "MATCH_IN_PROGRESS":
+      return "A match is being played in that room. Try again when it ends.";
+    case "NOT_READY":
+      return "Everyone else needs to be ready first.";
+    case "WRONG_PLAYER_COUNT":
+      return "Ludo needs two or four players.";
+    case "NOT_YOUR_TURN":
+      return "It's not your turn.";
+    case "MATCH_PAUSED":
+      return "The match is paused until everyone reconnects.";
+    case "PLAYER_AWAY":
+      return "Wait for everyone to reconnect.";
     default:
       return error.message;
   }

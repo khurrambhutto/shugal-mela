@@ -29,6 +29,7 @@ class Limits:
     completed_command_ttl_s: int = 600
     chat_history: int = 50
     session_idle_expiry_s: int = 30 * 60
+    reconnect_grace_s: float = 60
 
 
 @dataclass(frozen=True)
@@ -37,6 +38,8 @@ class Settings:
     allowed_origins: frozenset[str]
     frontend_dist: Path
     limits: Limits = field(default_factory=Limits)
+    # Development only: makes dice repeatable for automated browser tests.
+    dice_seed: int | None = None
 
     @property
     def secure_cookies(self) -> bool:
@@ -67,4 +70,12 @@ def load_settings(env: dict[str, str] | None = None) -> Settings:
         raise ValueError("public mode requires https:// origins")
 
     dist = Path(env.get("FRONTEND_DIST", PROJECT_ROOT / "frontend" / "dist"))
-    return Settings(mode=mode, allowed_origins=origins, frontend_dist=dist)
+    seed = env.get("DICE_SEED")
+    if seed is not None and mode != "development":
+        raise ValueError("DICE_SEED is only allowed in development mode")
+    return Settings(
+        mode=mode,
+        allowed_origins=origins,
+        frontend_dist=dist,
+        dice_seed=int(seed) if seed is not None else None,
+    )

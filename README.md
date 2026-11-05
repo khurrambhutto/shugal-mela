@@ -4,8 +4,10 @@ A browser multiplayer game project built to learn networking and backend develop
 Start with private rooms, live text chat, and Ludo. Add voice calls and more games later.
 FastAPI runs on the host's laptop. Friends on different networks connect through a public HTTPS tunnel.
 
-Phases 1 and 2 are built: guest sessions, private rooms of two or four players, and room chat
-over WebSockets. Remote hosting through a tunnel (phase 3) and the Ludo game are not done yet.
+Phases 1 to 6 are built: guest sessions, private rooms, room chat, hosting through a free tunnel,
+online Ludo for two or four players with server-rolled dice, and reconnecting: a refresh or a short
+network drop keeps your seat for 60 seconds and pauses the match until you are back.
+A server restart still ends every room until phase 7.
 
 ## Host for friends on other networks
 

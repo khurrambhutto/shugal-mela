@@ -43,6 +43,39 @@
       "body": {
         "text": "Hello!"
       }
+    },
+    "match-ready": {
+      "version": 1,
+      "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+      "type": "match.ready",
+      "body": {
+        "ready": true
+      }
+    },
+    "match-start": {
+      "version": 1,
+      "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+      "type": "match.start",
+      "body": {}
+    },
+    "match-roll": {
+      "version": 1,
+      "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+      "type": "match.roll",
+      "body": {
+        "match_id": "4f2c9a1b",
+        "step": 3
+      }
+    },
+    "match-move": {
+      "version": 1,
+      "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+      "type": "match.move",
+      "body": {
+        "match_id": "4f2c9a1b",
+        "step": 4,
+        "token": 2
+      }
     }
   },
   "invalid_commands": {
@@ -124,6 +157,57 @@
         "body": {}
       },
       "error": "UNSUPPORTED_VERSION"
+    },
+    "ready-not-bool": {
+      "message": {
+        "version": 1,
+        "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+        "type": "match.ready",
+        "body": {
+          "ready": "yes"
+        }
+      },
+      "error": "VALIDATION_ERROR"
+    },
+    "move-bad-token": {
+      "message": {
+        "version": 1,
+        "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+        "type": "match.move",
+        "body": {
+          "match_id": "x",
+          "step": 1,
+          "token": 4
+        }
+      },
+      "error": "VALIDATION_ERROR"
+    },
+    "roll-chooses-value": {
+      "message": {
+        "version": 1,
+        "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+        "type": "match.roll",
+        "body": {
+          "match_id": "x",
+          "step": 1,
+          "value": 6
+        }
+      },
+      "error": "VALIDATION_ERROR"
+    },
+    "move-with-colour": {
+      "message": {
+        "version": 1,
+        "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+        "type": "match.move",
+        "body": {
+          "match_id": "x",
+          "step": 1,
+          "token": 0,
+          "colour": "red"
+        }
+      },
+      "error": "VALIDATION_ERROR"
     }
   },
   "server_messages": {
@@ -132,7 +216,8 @@
       "type": "session.ready",
       "body": {
         "session_id": "session-a",
-        "nickname": "Ali"
+        "nickname": "Ali",
+        "room_code": null
       }
     },
     "result.ok": {
@@ -190,11 +275,13 @@
         "members": [
           {
             "session_id": "session-a",
-            "nickname": "Ali"
+            "nickname": "Ali",
+            "away_ms": null
           },
           {
             "session_id": "session-b",
-            "nickname": "Sara"
+            "nickname": "Sara",
+            "away_ms": 41250
           }
         ],
         "messages": [
@@ -205,7 +292,97 @@
             "text": "<b>hi</b>",
             "sent_at": "2026-11-05T12:00:00.000Z"
           }
-        ]
+        ],
+        "host": "session-a",
+        "ready": [
+          "session-b"
+        ],
+        "match": null
+      }
+    },
+    "room.snapshot.match": {
+      "version": 1,
+      "type": "room.snapshot",
+      "body": {
+        "code": "ABCD23",
+        "capacity": 2,
+        "revision": 5,
+        "members": [
+          {
+            "session_id": "session-a",
+            "nickname": "Ali",
+            "away_ms": null
+          },
+          {
+            "session_id": "session-b",
+            "nickname": "Sara",
+            "away_ms": null
+          }
+        ],
+        "messages": [
+          {
+            "message_id": "m1",
+            "sender_session_id": "session-a",
+            "sender_nickname": "Ali",
+            "text": "<b>hi</b>",
+            "sent_at": "2026-11-05T12:00:00.000Z"
+          }
+        ],
+        "host": "session-a",
+        "ready": [],
+        "match": {
+          "match_id": "4f2c9a1b",
+          "status": "playing",
+          "seats": [
+            {
+              "session_id": "session-a",
+              "colour": "red"
+            },
+            {
+              "session_id": "session-b",
+              "colour": "yellow"
+            }
+          ],
+          "colours": [
+            "red",
+            "yellow"
+          ],
+          "tokens": {
+            "red": [
+              -1,
+              0,
+              -1,
+              -1
+            ],
+            "yellow": [
+              -1,
+              -1,
+              -1,
+              -1
+            ]
+          },
+          "current": "red",
+          "phase": "awaiting_roll",
+          "roll": null,
+          "legal_moves": [],
+          "winner": null,
+          "step": 2,
+          "events": [
+            {
+              "colour": "red",
+              "token": 1,
+              "from_progress": -1,
+              "to_progress": 0,
+              "kind": "moved"
+            },
+            {
+              "colour": "red",
+              "reason": "six",
+              "kind": "extra_roll"
+            }
+          ],
+          "ended_reason": null
+        }
       }
     }
   }

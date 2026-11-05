@@ -27,7 +27,7 @@ async function createRoom(page: Page, capacity: 2 | 4 = 2): Promise<string> {
   return (await code.textContent())!;
 }
 
-const members = (page: Page) => page.locator(".members li");
+const members = (page: Page) => page.locator(".seat:not(.is-empty):not([hidden]) .member-name");
 const messageTexts = (page: Page) => page.locator(".messages .text");
 
 test("two players create, join, chat, and leave a room", async ({ browser }) => {
@@ -75,39 +75,63 @@ test("two players create, join, chat, and leave a room", async ({ browser }) => 
   await expect(sara.getByRole("button", { name: "Create 2-player room" })).toBeVisible();
 });
 
-test("a second tab with the same session is rejected", async ({ browser }) => {
+test("a second tab with the same session takes over", async ({ browser }) => {
   const first = await newPlayer(browser, "Ali");
   const second = await first.context().newPage();
   await second.goto("/");
   await second.getByLabel("Nickname").fill("Ali");
   await second.getByRole("button", { name: "Continue" }).click();
-  await expect(second.getByRole("alert")).toContainText("open in another tab");
-  await expect(first.getByRole("status")).toHaveText("Connected");
+  await expect(second.getByRole("status")).toHaveText("Connected");
+  await expect(first.getByRole("alert")).toContainText("opened in another tab");
+  // The replaced tab does not fight back.
+  await expect(first.getByRole("status")).toHaveText("Offline");
+  await expect(second.getByRole("status")).toHaveText("Connected");
 });
 
-test("stopping the server shows offline and blocks chat", async ({ browser }) => {
+test("a server restart reconnects on its own and explains the lost seat", async ({ browser }) => {
+  test.setTimeout(60_000);
   const port = 8766;
   const origin = `http://localhost:${port}`;
-  const server = spawn("uv", ["run", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", String(port)], {
-    cwd: fileURLToPath(new URL("../../../backend", import.meta.url)),
-    env: { ...process.env, APP_MODE: "development", ALLOWED_ORIGINS: origin },
-    stdio: "ignore",
-  });
-  try {
-    await expect
+  const startServer = () =>
+    spawn("uv", ["run", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", String(port)], {
+      cwd: fileURLToPath(new URL("../../../backend", import.meta.url)),
+      env: { ...process.env, APP_MODE: "development", ALLOWED_ORIGINS: origin },
+      stdio: "ignore",
+      // Its own process group, so stopping it also stops uvicorn under `uv run`.
+      detached: true,
+    });
+  const stop = (signal: NodeJS.Signals) => {
+    try {
+      process.kill(-server.pid!, signal);
+    } catch {
+      // Already stopped.
+    }
+  };
+  const healthy = () =>
+    expect
       .poll(async () => (await fetch(`${origin}/api/health`).catch(() => null))?.status ?? 0, { timeout: 15_000 })
       .toBe(200);
-
+  let server = startServer();
+  try {
+    await healthy();
     const ali = await newPlayer(browser, "Ali", origin);
     await createRoom(ali);
 
-    server.kill("SIGTERM");
-    await expect(ali.getByRole("status")).toHaveText("Offline");
-    await expect(ali.getByRole("alert")).toContainText("reconnect and rejoin");
+    stop("SIGTERM");
+    await expect(ali.getByRole("status")).toHaveText("Reconnecting…");
+    await expect(ali.getByRole("alert")).toContainText("Reconnecting");
     await expect(ali.getByPlaceholder("Message")).toBeDisabled();
     await expect(ali.getByRole("button", { name: "Send" })).toBeDisabled();
-    await expect(ali.getByRole("button", { name: "Reconnect" })).toBeVisible();
+    // The room stays on screen while retrying.
+    await expect(ali.locator(".room-code")).toBeVisible();
+
+    // Rooms live in memory, so a restarted server no longer has the seat.
+    server = startServer();
+    await healthy();
+    await expect(ali.getByRole("status")).toHaveText("Connected", { timeout: 20_000 });
+    await expect(ali.getByRole("alert")).toContainText("seat was released");
+    await expect(ali.getByRole("button", { name: "Create 2-player room" })).toBeEnabled();
   } finally {
-    server.kill("SIGKILL");
+    stop("SIGKILL");
   }
 });

@@ -9,21 +9,30 @@ import {
   type ResultBody,
   type RoomSnapshot,
   type SessionInfo,
+  type SessionReady,
 } from "./protocol";
 
-const CLOSE_ALREADY_CONNECTED = 4409;
+const CLOSE_REPLACED = 4000;
 
 // Thrown for commands whose outcome is unknown because the connection closed.
 export class UncertainError extends Error {}
 
 export interface ConnectionEvents {
-  onReady(session: SessionInfo): void;
+  onReady(session: SessionReady): void;
   onSnapshot(snapshot: RoomSnapshot): void;
-  onClosed(reason: string): void;
+  // retry is false when reconnecting would not help, such as another tab taking over.
+  onClosed(reason: string, retry: boolean): void;
   onUncorrelatedError(result: ResultBody): void;
 }
 
-export class SessionError extends Error {}
+export class SessionError extends Error {
+  constructor(
+    message: string,
+    readonly retry = false,
+  ) {
+    super(message);
+  }
+}
 
 // Derive the socket URL from the page origin so a tunnel's public host works unchanged.
 export function websocketUrl(location: Pick<Location, "protocol" | "host">): string {
@@ -41,12 +50,13 @@ export async function startSession(nickname: string): Promise<SessionInfo> {
       body: JSON.stringify({ nickname }),
     });
   } catch {
-    throw new SessionError("The server is unreachable.");
+    throw new SessionError("The server is unreachable.", true);
   }
   if (response.status === 422) throw new SessionError("Nicknames must be 1 to 24 characters.");
   if (response.status === 403) throw new SessionError("This address is not allowed by the server.");
   if (response.status === 409) throw new SessionError("Leave your room before changing nickname.");
-  if (!response.ok) throw new SessionError("The server is busy. Try again soon.");
+  if (response.status >= 500) throw new SessionError("The server is busy. Try again soon.", true);
+  if (!response.ok) throw new SessionError("The server refused the session.");
   return (await response.json()) as SessionInfo;
 }
 
@@ -78,7 +88,7 @@ export class Connection {
       if (socket !== this.socket) return;
       this.socket = null;
       this.failPending();
-      this.events.onClosed(closeReason(event.code, opened));
+      this.events.onClosed(closeReason(event.code, opened), event.code !== CLOSE_REPLACED);
     });
   }
 
@@ -135,11 +145,11 @@ export class Connection {
 }
 
 function closeReason(code: number, opened: boolean): string {
-  if (code === CLOSE_ALREADY_CONNECTED) {
-    return "This session is open in another tab. Use a private window or another browser profile for a second player.";
+  if (code === CLOSE_REPLACED) {
+    return "The game was opened in another tab, so this one stopped. Use a private window or another browser profile for a second player.";
   }
   if (code === 1009) return "A message was too large and the server closed the connection.";
   if (code === 1013) return "The connection fell behind and was closed. Reconnect to continue.";
   if (!opened) return "Could not connect to the server.";
-  return "Disconnected from the server. Your seat was released — reconnect and rejoin.";
+  return "Disconnected from the server.";
 }

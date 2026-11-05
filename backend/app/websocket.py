@@ -14,6 +14,10 @@ from app.protocol import (
     PROTOCOL_VERSION,
     ChatSend,
     Command,
+    MatchMove,
+    MatchReady,
+    MatchRoll,
+    MatchStart,
     RoomCreate,
     RoomJoin,
     RoomLeave,
@@ -29,7 +33,7 @@ from app.sessions import COOKIE_NAME, CompletedCommand, Session, SessionStore, c
 logger = logging.getLogger("shugal")
 
 CLOSE_MESSAGE_TOO_BIG = 1009
-CLOSE_ALREADY_CONNECTED = 4409
+CLOSE_REPLACED = 4000
 RATE_WINDOW_S = 10
 
 
@@ -55,8 +59,17 @@ class CommandProcessor:
         for session_id, message in deliveries:
             self.conns.send(session_id, message)
 
+    def connected(self, session: Session) -> None:
+        self._deliver(self.rooms.reconnect(session))
+
     def disconnect(self, session: Session) -> None:
-        for session_id, message in self.rooms.disconnect(session):
+        self._deliver(self.rooms.disconnect(session))
+
+    def expire_away(self) -> None:
+        self._deliver(self.rooms.expire_away())
+
+    def _deliver(self, deliveries: list[Any]) -> None:
+        for session_id, message in deliveries:
             self.conns.send(session_id, message)
 
     def _process(self, session: Session, raw: str) -> tuple[dict[str, Any], list[Any]]:
@@ -125,6 +138,14 @@ class CommandProcessor:
                 return self.rooms.sync(session)
             case ChatSend(body=body):
                 return self.rooms.send_chat(session, body.text)
+            case MatchReady(body=body):
+                return self.rooms.set_ready(session, body.ready)
+            case MatchStart():
+                return self.rooms.start_match(session)
+            case MatchRoll(body=body):
+                return self.rooms.play(session, body.match_id, body.step, "roll")
+            case MatchMove(body=body):
+                return self.rooms.play(session, body.match_id, body.step, "move", body.token)
 
     def _remember(self, session: Session, command_id: str, content: str, result: dict[str, Any]) -> None:
         session.completed[command_id] = CompletedCommand(content, result, self.sessions.clock())
@@ -174,17 +195,18 @@ async def serve_socket(
         return
 
     conn = Connection(ws, session.session_id, settings.limits.outbound_queue_size)
-    if not conns.register(conn):
-        logger.info("ws rejected reason=already-connected session=%s", session.session_id)
-        await ws.accept()
-        await ws.close(code=CLOSE_ALREADY_CONNECTED)
-        return
-
-    session.connection_id = conn.id
     await ws.accept()
+    # Register, greet, and restore the seat without awaiting, so no command slips in between.
+    previous = conns.register(conn)
+    session.connection_id = conn.id
     conn.start()
-    conn.enqueue(session_ready(session.session_id, session.nickname))
+    conn.enqueue(session_ready(session.session_id, session.nickname, session.room_code))
+    processor.connected(session)
     logger.info("ws connected conn=%s session=%s", conn.id, session.session_id)
+    if previous is not None:
+        # The newest connection wins: a refreshed page or a second tab takes over the seat.
+        logger.info("ws replaced conn=%s by=%s", previous.id, conn.id)
+        await previous.close(CLOSE_REPLACED)
     close_code: int | None = None
     try:
         while True:
@@ -205,8 +227,9 @@ async def serve_socket(
     finally:
         await conn.stop_writer()
         conns.unregister(conn)
+        # A replaced connection's cleanup must not mark its successor's player as away.
         if session.connection_id == conn.id:
             session.connection_id = None
-        processor.disconnect(session)
+            processor.disconnect(session)
         sessions.touch(session)
         logger.info("ws disconnected conn=%s session=%s code=%s", conn.id, session.session_id, close_code)

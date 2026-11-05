@@ -3,7 +3,7 @@
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, TypeAdapter
 
 PROTOCOL_VERSION = 1
 
@@ -17,6 +17,17 @@ ErrorCode = Literal[
     "RATE_LIMITED",
     "COMMAND_ID_REUSED",
     "SERVER_BUSY",
+    "NOT_HOST",
+    "NOT_READY",
+    "WRONG_PLAYER_COUNT",
+    "MATCH_IN_PROGRESS",
+    "NO_MATCH",
+    "STALE_STATE",
+    "NOT_YOUR_TURN",
+    "WRONG_PHASE",
+    "ILLEGAL_MOVE",
+    "MATCH_PAUSED",
+    "PLAYER_AWAY",
 ]
 
 
@@ -42,6 +53,19 @@ class JoinBody(StrictModel):
 class ChatBody(StrictModel):
     # The 500 code point limit applies after trimming, so it is checked by the handler.
     text: str = Field(max_length=2000)
+
+
+class ReadyBody(StrictModel):
+    ready: StrictBool
+
+
+class RollBody(StrictModel):
+    match_id: str = Field(max_length=64)
+    step: StrictInt = Field(ge=0)
+
+
+class MoveBody(RollBody):
+    token: StrictInt = Field(ge=0, le=3)
 
 
 class _Command(StrictModel):
@@ -74,8 +98,28 @@ class ChatSend(_Command):
     body: ChatBody
 
 
+class MatchReady(_Command):
+    type: Literal["match.ready"]
+    body: ReadyBody
+
+
+class MatchStart(_Command):
+    type: Literal["match.start"]
+    body: EmptyBody
+
+
+class MatchRoll(_Command):
+    type: Literal["match.roll"]
+    body: RollBody
+
+
+class MatchMove(_Command):
+    type: Literal["match.move"]
+    body: MoveBody
+
+
 Command = Annotated[
-    RoomCreate | RoomJoin | RoomLeave | RoomSync | ChatSend,
+    RoomCreate | RoomJoin | RoomLeave | RoomSync | ChatSend | MatchReady | MatchStart | MatchRoll | MatchMove,
     Field(discriminator="type"),
 ]
 command_adapter: TypeAdapter[Command] = TypeAdapter(Command)
@@ -87,6 +131,7 @@ command_adapter: TypeAdapter[Command] = TypeAdapter(Command)
 class Member(StrictModel):
     session_id: str
     nickname: str
+    away_ms: int | None = None  # Time left to reconnect; None while connected.
 
 
 class ChatMessage(StrictModel):
@@ -103,14 +148,17 @@ class RoomSnapshot(StrictModel):
     revision: int
     members: tuple[Member, ...]
     messages: tuple[ChatMessage, ...]
+    host: str
+    ready: tuple[str, ...]
+    match: dict[str, Any] | None
 
 
 def envelope(type_: str, body: dict[str, Any]) -> dict[str, Any]:
     return {"version": PROTOCOL_VERSION, "type": type_, "body": body}
 
 
-def session_ready(session_id: str, nickname: str) -> dict[str, Any]:
-    return envelope("session.ready", {"session_id": session_id, "nickname": nickname})
+def session_ready(session_id: str, nickname: str, room_code: str | None) -> dict[str, Any]:
+    return envelope("session.ready", {"session_id": session_id, "nickname": nickname, "room_code": room_code})
 
 
 def snapshot_message(snapshot: RoomSnapshot) -> dict[str, Any]:
