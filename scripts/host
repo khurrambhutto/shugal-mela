@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# Host Shugal Mela for friends on other networks.
+# Builds the frontend, opens a Cloudflare Quick Tunnel, and runs the backend in public
+# mode with the tunnel's exact origin. Press Ctrl+C to stop both.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PORT="${PORT:-8000}"
+
+if ! command -v cloudflared >/dev/null; then
+  echo "cloudflared is not installed. See docs/hosting.md." >&2
+  exit 1
+fi
+if curl -fs "http://127.0.0.1:${PORT}/api/health" >/dev/null 2>&1; then
+  echo "Something is already running on port ${PORT}. Stop it first." >&2
+  exit 1
+fi
+
+echo "==> Building the frontend"
+cd "$ROOT/frontend"
+[ -d node_modules ] || npm ci
+npm run build >/dev/null
+
+echo "==> Installing backend dependencies"
+cd "$ROOT/backend"
+uv sync --frozen --quiet
+
+TUNNEL_LOG="$(mktemp -t shugal-tunnel.XXXXXX)"
+cleanup() {
+  [ -n "${TUNNEL_PID:-}" ] && kill "$TUNNEL_PID" 2>/dev/null || true
+  rm -f "$TUNNEL_LOG"
+}
+trap cleanup EXIT
+
+echo "==> Starting the Cloudflare Quick Tunnel"
+cloudflared tunnel --no-autoupdate --url "http://127.0.0.1:${PORT}" >"$TUNNEL_LOG" 2>&1 &
+TUNNEL_PID=$!
+
+URL=""
+for _ in $(seq 60); do
+  URL="$(grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' "$TUNNEL_LOG" | head -1 || true)"
+  [ -n "$URL" ] && break
+  kill -0 "$TUNNEL_PID" 2>/dev/null || break
+  sleep 1
+done
+if [ -z "$URL" ]; then
+  echo "The tunnel did not report a public address. Its log:" >&2
+  cat "$TUNNEL_LOG" >&2
+  exit 1
+fi
+
+cat <<EOF
+
+  Share this address with your friends:
+
+      $URL
+
+  The address changes every time this script restarts.
+  Keep this terminal open and the laptop awake while you play.
+  Press Ctrl+C to stop the game and the tunnel.
+
+EOF
+
+APP_MODE=public ALLOWED_ORIGINS="$URL" \
+  uv run uvicorn app.main:app --host 127.0.0.1 --port "$PORT" --ws-max-size 8192

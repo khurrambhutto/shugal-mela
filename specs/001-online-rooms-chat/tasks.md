@@ -1,6 +1,6 @@
 # Tasks: Online rooms and chat
 
-**Status:** Setup, foundation, US1, and US2 (T001–T018) and the browser journey (T020) are complete. US3 hosting and cross-cutting verification are pending.
+**Status:** Setup, foundation, US1, and US2 (T001–T018) and hosting docs and browser journey (T019–T020) are complete. Remote two-device acceptance (T021) passed. Cross-cutting verification (T022–T025) is pending.
 **Inputs:** [specification](spec.md), [plan](plan.md), [data model](data-model.md), and [protocol](contracts/protocol.md).
 
 Run these tasks sequentially unless independent work is explicitly requested.
@@ -45,9 +45,9 @@ Focused behavior checks are required by the specification. No test-first workflo
 
 ## US3: Host across networks
 
-- [ ] T019 Write `docs/hosting.md` with application installation, build, one-worker startup, exact allowed-origin configuration, HTTPS cookie mode, Quick Tunnel startup, hostname changes, and shutdown. Add matching scripts to `backend/pyproject.toml` or project shell scripts only where useful.
+- [x] T019 Write `docs/hosting.md` with application installation, build, one-worker startup, exact allowed-origin configuration, HTTPS cookie mode, Quick Tunnel startup, hostname changes, and shutdown. Add matching scripts to `backend/pyproject.toml` or project shell scripts only where useful. Implemented as `scripts/host`.
 - [x] T020 Add `frontend/tests/browser/rooms-chat.e2e.ts` for separate browser contexts creating and joining a room, chat exchange, leave, connection loss, and public-origin URL construction. Document the command that runs this journey (`npm run test:browser` in `frontend/`). Public-origin URL construction is covered by `frontend/tests/state.test.ts`.
-- [ ] T021 Run the application and tunnel, then execute `quickstart.md` on two real devices on different networks. Record actual results, or explicitly mark this task pending if a second device or tester is unavailable.
+- [x] T021 Run the application and tunnel, then execute `quickstart.md` on two real devices on different networks. Record actual results, or explicitly mark this task pending if a second device or tester is unavailable.
 
 **Checkpoint:** A remote friend or a phone using mobile data exchanges room messages with the host. Local automated tests alone do not satisfy this story.
 

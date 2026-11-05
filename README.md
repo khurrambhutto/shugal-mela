@@ -7,6 +7,15 @@ FastAPI runs on the host's laptop. Friends on different networks connect through
 Phases 1 and 2 are built: guest sessions, private rooms of two or four players, and room chat
 over WebSockets. Remote hosting through a tunnel (phase 3) and the Ludo game are not done yet.
 
+## Host for friends on other networks
+
+```bash
+./scripts/host
+```
+
+This builds the app, opens a free Cloudflare Quick Tunnel, and prints a public `https://` link.
+Friends open the link in a browser and install nothing. See [the hosting guide](docs/hosting.md).
+
 ## Run locally
 
 Requires uv, Python 3.12, and Node.js with npm.

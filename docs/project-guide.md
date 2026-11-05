@@ -287,7 +287,10 @@ and the existing Ludo, chat, and voice checks still pass.
 
 ## Proposed Ludo rule defaults for phase 4
 
-These defaults define a starting variant. Confirm or revise them when creating the Ludo feature spec.
+These were the starting proposal. The confirmed rules are in
+[the Ludo rules spec](../specs/002-ludo-rules/spec.md). They differ in two places:
+a capture or a token reaching home also grants an extra roll (at most one per move),
+and the four star squares are safe as well as the four start squares.
 
 - Support two players on opposite colors or four players, with four tokens per player.
 - Use a six to move a token from the yard onto its start square. This consumes the roll.

@@ -65,10 +65,10 @@ Results from 2026-11-05 on the Linux host laptop:
   room isolation, markup shown as text, the chat rate limit, leave, a rejected second tab,
   and the offline state with disabled chat after the server stops.
 - Local room and chat journey by hand in two browser profiles: not run.
-- Remote device and browser: not recorded.
-- Networks used by each participant: not recorded.
-- Remote room and chat journey: not run.
-- Tunnel interruption behavior: not run.
-- Date and unresolved failures: not recorded.
+- Remote device and browser: a friend's own device and browser, miles away from the host.
+- Networks used by each participant: host laptop on its home connection; the friend on their own separate internet connection. Exact providers not recorded.
+- Remote room and chat journey: passed on 2026-11-05 through `./scripts/host` and a Quick Tunnel. The friend joined the room and messages were exchanged in both directions, as reported by the host.
+- Tunnel interruption behavior: not observed on the remote device. Offline after server stop is verified locally by the browser journey.
+- Date and unresolved failures: 2026-11-05. No failures reported. Before the remote test, the public origin was probed from the host: HTTPS page, Secure cookie, 403 for other origins, and a two-session `wss://` chat.
 
 The implementation phase must add exact executable test commands and observed results here.
