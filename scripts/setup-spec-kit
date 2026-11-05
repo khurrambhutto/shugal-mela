@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+project_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$project_root"
+
+if ! command -v uv >/dev/null 2>&1; then
+    echo "Install uv, then rerun ./scripts/setup-spec-kit." >&2
+    exit 1
+fi
+
+if [[ ! -x .venv-spec-kit/bin/python ]]; then
+    uv venv .venv-spec-kit --python 3.12
+fi
+
+uv pip sync .tools/spec-kit/requirements.lock --python .venv-spec-kit/bin/python
+exec ./scripts/specify version

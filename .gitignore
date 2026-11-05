@@ -1,0 +1,20 @@
+.firecrawl/
+.venv-spec-kit/
+__pycache__/
+
+# Local secrets and environment overrides
+.env
+.env.*
+!.env.example
+
+# Logs and coverage
+*.log
+coverage/
+.coverage
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

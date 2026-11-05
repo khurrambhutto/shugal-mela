@@ -1,0 +1,212 @@
+{
+  "commands": {
+    "create-2": {
+      "version": 1,
+      "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+      "type": "room.create",
+      "body": {
+        "capacity": 2
+      }
+    },
+    "create-4": {
+      "version": 1,
+      "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+      "type": "room.create",
+      "body": {
+        "capacity": 4
+      }
+    },
+    "join": {
+      "version": 1,
+      "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+      "type": "room.join",
+      "body": {
+        "code": "abcd23"
+      }
+    },
+    "leave": {
+      "version": 1,
+      "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+      "type": "room.leave",
+      "body": {}
+    },
+    "sync": {
+      "version": 1,
+      "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+      "type": "room.sync",
+      "body": {}
+    },
+    "chat": {
+      "version": 1,
+      "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+      "type": "chat.send",
+      "body": {
+        "text": "Hello!"
+      }
+    }
+  },
+  "invalid_commands": {
+    "unknown-type": {
+      "message": {
+        "version": 1,
+        "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+        "type": "room.dance",
+        "body": {}
+      },
+      "error": "VALIDATION_ERROR"
+    },
+    "bad-capacity": {
+      "message": {
+        "version": 1,
+        "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+        "type": "room.create",
+        "body": {
+          "capacity": 3
+        }
+      },
+      "error": "VALIDATION_ERROR"
+    },
+    "string-capacity": {
+      "message": {
+        "version": 1,
+        "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+        "type": "room.create",
+        "body": {
+          "capacity": "2"
+        }
+      },
+      "error": "VALIDATION_ERROR"
+    },
+    "missing-body": {
+      "message": {
+        "version": 1,
+        "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+        "type": "room.sync"
+      },
+      "error": "VALIDATION_ERROR"
+    },
+    "spoofed-sender": {
+      "message": {
+        "version": 1,
+        "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+        "type": "chat.send",
+        "body": {
+          "text": "hi",
+          "sender_id": "someone"
+        }
+      },
+      "error": "VALIDATION_ERROR"
+    },
+    "extra-envelope-field": {
+      "message": {
+        "version": 1,
+        "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+        "type": "room.sync",
+        "body": {},
+        "room": "ABCD23"
+      },
+      "error": "VALIDATION_ERROR"
+    },
+    "bad-command-id": {
+      "message": {
+        "version": 1,
+        "command_id": "not-a-uuid",
+        "type": "room.sync",
+        "body": {}
+      },
+      "error": "VALIDATION_ERROR"
+    },
+    "future-version": {
+      "message": {
+        "version": 2,
+        "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+        "type": "room.sync",
+        "body": {}
+      },
+      "error": "UNSUPPORTED_VERSION"
+    }
+  },
+  "server_messages": {
+    "session.ready": {
+      "version": 1,
+      "type": "session.ready",
+      "body": {
+        "session_id": "session-a",
+        "nickname": "Ali"
+      }
+    },
+    "result.ok": {
+      "version": 1,
+      "type": "command.result",
+      "body": {
+        "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+        "ok": true,
+        "room_code": "ABCD23",
+        "revision": 2
+      }
+    },
+    "result.leave": {
+      "version": 1,
+      "type": "command.result",
+      "body": {
+        "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+        "ok": true,
+        "room_code": null,
+        "revision": null
+      }
+    },
+    "result.error": {
+      "version": 1,
+      "type": "command.result",
+      "body": {
+        "command_id": "b838d8b5-dfa6-4f8d-a631-8355c5f003ba",
+        "ok": false,
+        "error": {
+          "code": "ROOM_FULL",
+          "message": "This room has no available seats."
+        }
+      }
+    },
+    "result.rate-limited": {
+      "version": 1,
+      "type": "command.result",
+      "body": {
+        "command_id": null,
+        "ok": false,
+        "error": {
+          "code": "RATE_LIMITED",
+          "message": "Too many requests.",
+          "retry_after_ms": 4000
+        }
+      }
+    },
+    "room.snapshot": {
+      "version": 1,
+      "type": "room.snapshot",
+      "body": {
+        "code": "ABCD23",
+        "capacity": 2,
+        "revision": 3,
+        "members": [
+          {
+            "session_id": "session-a",
+            "nickname": "Ali"
+          },
+          {
+            "session_id": "session-b",
+            "nickname": "Sara"
+          }
+        ],
+        "messages": [
+          {
+            "message_id": "m1",
+            "sender_session_id": "session-a",
+            "sender_nickname": "Ali",
+            "text": "<b>hi</b>",
+            "sent_at": "2026-11-05T12:00:00.000Z"
+          }
+        ]
+      }
+    }
+  }
+}

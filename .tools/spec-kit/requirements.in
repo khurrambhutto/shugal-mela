@@ -1,0 +1,2 @@
+# GitHub Spec Kit v1.3.0, pinned to the release commit.
+specify-cli @ git+https://github.com/github/spec-kit.git@34a0d388eac671d656eb05b125ad3ed6056168ed

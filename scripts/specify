@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+project_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$project_root"
+
+if [[ ! -x .venv-spec-kit/bin/specify ]]; then
+    echo "Run ./scripts/setup-spec-kit to install this project's Spec Kit environment." >&2
+    exit 1
+fi
+
+exec "$project_root/.venv-spec-kit/bin/specify" "$@"
